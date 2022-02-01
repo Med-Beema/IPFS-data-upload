@@ -1,0 +1,17 @@
+{
+  "name": "fleek-intro",
+  "version": "1.0.0",
+  "description": "introduction to fleek",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@fleekhq/fleek-storage-js": "^1.0.20",
+    "dotenv": "^15.0.0",
+    "express": "^4.17.2",
+    "multer": "^1.4.4"
+  }
+}
