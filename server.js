@@ -36,108 +36,71 @@ const uploadToFleek = async (data, filename, imageName) => {
     }
 };
 
-const uploadToFleekJson = async (data, filename, imageName) => {
-    const input = {
-        apiKey,
-        apiSecret,
-        key: `MedBeema/${filename}.json`,
-        data,
-    };
-
+const uploadIpfs = async (filePath, fileName) => {
+    const file = fs.readFileSync(filePath);
     try {
-        const result = await fleek.upload(input);
-        console.log(result);
-        return result.publicUrl;
+        const uploadedFile = await uploadToFleek(file, fileName);
+        if (uploadedFile) {
+            return {
+                hash: uploadedFile.hash,
+                publicUrl: uploadedFile.publicUrl,
+            };
+        }
     } catch (e) {
-        console.log("error", e);
         return false;
     }
 };
 
-const uploadImage = (imageName, imageFileName, onSuccess) => {
-    const filePath = path.join(__dirname, `./public/uploads/${imageFileName}`);
-    console.log(filePath);
+const imageUpload = async (req, res) => {
+    console.log(req.file);
+    const file = req.file;
+    const fileName = file.filename;
+    const filePath = `${__dirname}\\${file.path}`;
 
-    fs.readFile(filePath, async (err, imageFile) => {
-        try {
-            let result = await uploadToFleek(
-                imageFile,
-                imageFileName,
-                imageName
-            );
-            if (result) {
-                onSuccess(result.publicUrl);
-            }
-            // .then(() => {
-            //     console.log(formData);
-            //     if (Object.keys(formData >= 4).length) saveJSONData();
-            // });
-        } catch (e) {
-            console.log(e);
-            onSuccess(false);
-        }
-    });
-};
+    const fileHash = await uploadIpfs(filePath, fileName);
 
-const imageUpload = (req, res) => {
-    // const file = req.files;
-    console.log(req.files);
-};
-
-router.post("/api", upload, (req, res) => {
-    formData = {};
-    formData.name = req.body.name;
-
-    formData.fatherName = req.body.fatherName;
-    // formData.dob = req.body.dob;
-    // formData.permanentAddress = req.body.permanentAddress;
-    // formData.occupation = req.body.occupation;
-    // formData.contactNum = req.body.contactNum;
-    // formData.identificationNum = req.body.identificationNum;
-    // formData.idType = req.body.idType;
-    // formData.issuedDate = req.body.issuedDate;
-    // formData.issuePlace = req.body.issuePlace;
-
-    // const photo = req.body.photo;
-    // const identificationPhoto = req.body.identificationPhoto;
-    // const signature = req.body.signature;
-    console.log(formData);
-
-    uploadData = async () => {
-        const imageNames = ["photo", "identificationPhoto"]; //, "signature"];
-
-        imageNames.forEach((imageName, index) => {
-            const imageFileName = req.files[imageName][0].filename;
-            uploadImage(imageName, imageFileName, (imageURL) => {
-                console.log("imageURL", JSON.stringify(imageURL, null, 2));
-                if (imageURL) {
-                    formData[imageName] = imageURL;
-                    console.log(formData);
-
-                    if (index === imageNames.length - 1) {
-                        uploadToFleekJson(JSON.stringify(formData)).then(
-                            (d) => {
-                                if (d) {
-                                    console.log("final JOSN", d);
-                                    res.json(d);
-                                    res.end();
-                                }
-                            }
-                        );
-                    }
-                }
-            });
-            // console.log(req.files);
+    if (fileHash) {
+        fs.unlink(filePath, (err) => {
+            if (err) console.log(err);
         });
-    };
-    if (req.files) {
-        uploadData();
+
+        res.status(200).json({
+            success: true,
+            message: "Image Added",
+            id: fileHash.hash,
+            image: fileHash.publicUrl,
+        });
+    } else {
+        res.status(400).json({
+            success: false,
+        });
     }
-});
+};
+
+const jsonUpload = async (req, res) => {
+    const formData = JSON.stringify(req.body);
+    // console.log(formData);
+    const fileName = `${req.body.name}-${Date.now()}.json`;
+
+    const fileHash = await uploadToFleek(formData, fileName);
+    if (fileHash) {
+        res.status(200).json({
+            success: true,
+            message: "JSON Added",
+            id: fileHash.hash,
+            image: fileHash.publicUrl,
+        });
+    } else {
+        res.status(400).json({
+            success: false,
+        });
+    }
+};
 
 router.post("/api/uploadImage", upload, imageUpload);
-app.use("/", router);
+router.post("/api/data", upload, jsonUpload);
 
+app.use("/", router);
 app.listen(port, () => {
     console.log(`server running at port ${port}`);
 });

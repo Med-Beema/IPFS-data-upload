@@ -12,16 +12,23 @@ const storage = multer.diskStorage({
 });
 
 //Init Upload
+// const upload = multer({
+//     storage: storage,
+//     limits: { fileSize: 1000000 },
+//     fileFilter: function (req, file, cb) {
+//         checkFileType(file, cb);
+//     },
+// }).fields([
+//     { name: "photo", maxCount: 1 },
+//     { name: "identificationPhoto", maxCount: 1 },
+// ]);
 const upload = multer({
     storage: storage,
     limits: { fileSize: 1000000 },
     fileFilter: function (req, file, cb) {
         checkFileType(file, cb);
     },
-}).fields([
-    { name: "photo", maxCount: 1 },
-    { name: "identificationPhoto", maxCount: 1 },
-]);
+}).single("image");
 
 //Check file type
 function checkFileType(file, cb) {
